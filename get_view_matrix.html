@@ -5,6 +5,13 @@
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.js"></script>
 		<script src="/components.js"></script>
 		<script type="text/javascript">
+			// カメラの解像度
+			const w = 1280;
+			const h = 720;
+			// カメラの垂直画角
+			const h_fov = 70;
+			const w_fov = Math.tan(h_fov) * w / h;
+
 			let rootComponent;
 			let marker = [
 				new CursorComponent(100, 100),
@@ -14,7 +21,7 @@
 			];
 
 			function setup() {
-				createCanvas(1280, 720);
+				createCanvas(w, h);
 				rootComponent = new RootComponent();
 				for(let m of marker) rootComponent.add(m);
 			}
