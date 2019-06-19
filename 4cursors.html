@@ -1,0 +1,35 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.js"></script>
+		<script src="/components.js"></script>
+		<script type="text/javascript">
+			let rootComponent;
+			let cursors = [];
+
+			function setup() {
+				createCanvas(1280, 720);
+				rootComponent = new RootComponent();
+				cursors.push(new CursorComponent(100, 100));
+				cursors.push(new CursorComponent(200, 100));
+				cursors.push(new CursorComponent(200, 200));
+				cursors.push(new CursorComponent(100, 200));
+				for(let c of cursors) rootComponent.add(c);
+			}
+
+			function draw() {
+				background(255, 255, 255);
+				rootComponent.update();
+				rootComponent.draw();
+				noFill();
+				stroke(0, 0, 0);
+				strokeWeight(3);
+				beginShape();
+				for(let c of cursors) vertex(c.pos().x, c.pos().y);
+				if (cursors.length > 0) vertex(cursors[0].pos().x, cursors[0].pos().y);
+				endShape();
+			}
+		</script>
+	</body>
+</html>

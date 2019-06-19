@@ -1,0 +1,36 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.js"></script>
+		<script src="/components.js"></script>
+		<script type="text/javascript">
+			let rootComponent;
+			let marker = [
+				new CursorComponent(100, 100),
+				new CursorComponent(200, 100),
+				new CursorComponent(200, 200),
+				new CursorComponent(100, 200)
+			];
+
+			function setup() {
+				createCanvas(1280, 720);
+				rootComponent = new RootComponent();
+				for(let m of marker) rootComponent.add(m);
+			}
+
+			function draw() {
+				background(255, 255, 255);
+				rootComponent.update();
+				rootComponent.draw();
+				noFill();
+				stroke(0, 0, 0);
+				strokeWeight(3);
+				beginShape();
+				for(let m of marker) vertex(m.pos().x, m.pos().y);
+				if (marker.length > 0) vertex(marker[0].pos().x, marker[0].pos().y);
+				endShape();
+			}
+		</script>
+	</body>
+</html>
