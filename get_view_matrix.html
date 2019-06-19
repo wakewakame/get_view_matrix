@@ -6,13 +6,16 @@
 		<script src="/components.js"></script>
 		<script type="text/javascript">
 			// 参考URL : https://im-lab.net/artoolkit-overview/
-			
+
 			// カメラの解像度
-			const w = 1280;
-			const h = 720;
+			const cam_w = 1280;
+			const cam_h = 720;
 			// カメラの垂直画角
-			const h_fov = 70;
-			const w_fov = Math.tan(h_fov) * w / h;
+			const cam_h_fov = 70;
+			// カメラ座標の原点から画面の中心までの距離(ピクセル単位)
+			const cam_l = (0.5 * cam_h) / Math.tan(0.5 * cam_h_fov * 2 * Math.PI / 360);
+			// カメラの水平画角
+			const cam_w_fov = Math.atan((0.5 * cam_w) / cam_l) * 360 / Math.PI;
 
 			let rootComponent;
 			let marker = [
@@ -23,7 +26,7 @@
 			];
 
 			function setup() {
-				createCanvas(w, h);
+				createCanvas(cam_w, cam_h);
 				rootComponent = new RootComponent();
 				for(let m of marker) rootComponent.add(m);
 			}
