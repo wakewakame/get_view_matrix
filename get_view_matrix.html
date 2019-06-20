@@ -72,12 +72,11 @@
 				let z_vec = vnormal(vcross(surface_left, surface_right ));
 				let y_vec = vnormal(vcross(x_vec       , z_vec         ));
 				// プロジェクション行列の計算
-				let near = 20, far = 2000;
 				let projection = mmat(
-					2 * near / width, 0, 0, 0,
-					0, 2 * near / height, 0, 0,
-					0, 0, - (far + near) / (far - near), - (2 * far * near) / (far - near),
-					0, 0, -1, 0
+					2 * cam_l / cam_w, 0, 0, 0,
+					0, 2 * cam_l / cam_h, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 1, 0
 				);
 				// 回転行列の計算
 				let rotate_matrix = mmat(
