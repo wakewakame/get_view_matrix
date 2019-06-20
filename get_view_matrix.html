@@ -86,10 +86,10 @@
 					x_vec.z, y_vec.z, z_vec.z, 0,
 					0      , 0      , 0      , 1
 				);
-				rotate_matrix = mrotate(vvec(1, 1, 0), time);
+				//rotate_matrix = mrotate(vvec(1, 1, 0), time);
 				let mvp = mmcross(projection, rotate_matrix);
 
-				mvp = projection;
+				mvp = rotate_matrix;
 
 				let x_vec_ = world2screen(vvec(1000, 0, 0), mvp);
 				let y_vec_ = world2screen(vvec(0, 1000, 0), mvp);
