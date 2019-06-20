@@ -73,10 +73,10 @@
 				let y_vec = vnormal(vcross(x_vec       , z_vec         ));
 				// プロジェクション行列の計算
 				let projection = mmat(
-					2 * cam_l, 0, 0, 0,
-					0, 2 * cam_l, 0, 0,
+					cam_l, 0, 0, 0,
+					0, cam_l, 0, 0,
 					0, 0, 1, 0,
-					0, 0, 1, 0
+					0, 0, 1, cam_l
 				);
 				// 回転行列の計算
 				let rotate_matrix = mmat(
@@ -85,19 +85,24 @@
 					x_vec.z, y_vec.z, z_vec.z, 0,
 					0      , 0      , 0      , 1
 				);
-
+				/*
+				// MVP行列の計算
 				let mvp = mmcross(projection, rotate_matrix);
 
-				//let line = (x1, y1, z1, x2, y2, z2) => {
-				//	let p1 = world2screen(vvec(1000, 0, 0), mvp);
-				//};
+				let arline = (x1, y1, z1, x2, y2, z2) => {
+					let p1 = world2screen(vvec(x1, y1, z1), mvp);
+					let p2 = world2screen(vvec(x2, y2, z2), mvp);
+					line(p1.x, p1.y, p2.x, p2.y);
+				};
 
-				let x_vec_ = world2screen(vvec(1000, 0, 0), mvp);
-				let y_vec_ = world2screen(vvec(0, 1000, 0), mvp);
-				let z_vec_ = world2screen(vvec(0, 0, 1000), mvp);
-				line(0, 0, x_vec_.x, x_vec_.y);
-				line(0, 0, y_vec_.x, y_vec_.y);
-				line(0, 0, z_vec_.x, z_vec_.y);
+				arline(-100, 0, 0, 100, 0, 0);
+				arline(0, -100, 0, 0, 100, 0);
+				arline(0, 0, -100, 0, 0, 100);
+				*/
+
+				let mvp = projection;
+				let p = world2screen(vvec(mouseX - (0.5 * width), mouseY - (0.5 * height), 0), mvp);
+				ellipse(p.x, p.y, 30, 30);
 			}
 		</script>
 	</body>
