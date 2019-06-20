@@ -25,6 +25,7 @@
 
 			function setup() {
 				createCanvas(cam_w, cam_h, WEBGL);
+				frameRate(60);
 				rootComponent = new RootComponent(true);
 				marker = [
 					new CursorComponent(width / 2 - 71, height / 2 - 12),
@@ -70,13 +71,15 @@
 				// 上下の面の交線と左右の面の交線を計算
 				let x_vec = vnormal(vcross(surface_top , surface_bottom));
 				let z_vec = vnormal(vcross(surface_left, surface_right ));
-				let y_vec = vnormal(vcross(x_vec       , z_vec         ));
+				let y_vec = vnormal(vcross(x_vec, z_vec));
+				// カメラの座標
+				let camera_position = vvec(0, 0, -cam_l * 4);
 				// プロジェクション行列の計算
 				let projection = mmat(
 					cam_l, 0, 0, 0,
 					0, cam_l, 0, 0,
 					0, 0, 1, 0,
-					0, 0, 1, cam_l
+					0, 0, 1, 0
 				);
 				// 回転行列の計算
 				let rotate_matrix = mmat(
@@ -85,9 +88,18 @@
 					x_vec.z, y_vec.z, z_vec.z, 0,
 					0      , 0      , 0      , 1
 				);
-				/*
+				// 平行移動行列の計算
+				let translate_matrix = mmat(
+					1, 0, 0, -camera_position.x,
+					0, 1, 0, -camera_position.y,
+					0, 0, 1, -camera_position.z,
+					0, 0, 0, 1
+				);
+				// view行列の計算
+				let view_matrix = mmcross(translate_matrix, rotate_matrix);
+
 				// MVP行列の計算
-				let mvp = mmcross(projection, rotate_matrix);
+				let mvp = mmcross(projection, view_matrix);
 
 				let arline = (x1, y1, z1, x2, y2, z2) => {
 					let p1 = world2screen(vvec(x1, y1, z1), mvp);
@@ -95,14 +107,13 @@
 					line(p1.x, p1.y, p2.x, p2.y);
 				};
 
-				arline(-100, 0, 0, 100, 0, 0);
-				arline(0, -100, 0, 0, 100, 0);
-				arline(0, 0, -100, 0, 0, 100);
-				*/
-
-				let mvp = projection;
-				let p = world2screen(vvec(mouseX - (0.5 * width), mouseY - (0.5 * height), 0), mvp);
-				ellipse(p.x, p.y, 30, 30);
+				strokeWeight(0.8);
+				stroke(255, 0, 0);
+				for(let i = -9; i <= 9; i++) {
+					arline(-1000, 0, i * 100, 1000, 0, i * 100);
+					arline(i * 100, 0, -1000, i * 100, 0, 1000);
+				}
+				arline(0, -1000, 0, 0, 1000, 0);
 			}
 		</script>
 	</body>

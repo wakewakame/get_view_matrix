@@ -309,6 +309,9 @@ class CursorComponent extends Component{
 		super(tmp_x, tmp_y, 0, 0);
 		this.name = "PointComponent";
 		this.c = tmp_color;
+		this.hit_flag = false;
+		this.hit_time = 0;
+		this.hit_animation = 0;
 	}
 	pos(){
 		return super.getGlobalPos(this.w / 2, this.h / 2);
@@ -323,6 +326,11 @@ class CursorComponent extends Component{
 		this.y -= this.h / 2;
 	}
 	update(){
+		this.hit_time = Math.min(1, Math.max(0, (this.hit_time + 0.25 * (this.hit_flag ? 1 : -1))));
+		this.hit_animation = (1 - pow(this.hit_time - 1, 4)) * 6;
+		this.hit_flag = false;
+
+
 		this.x = Math.max(-this.w / 2, this.x);
 		this.y = Math.max(-this.h / 2, this.y);
 		this.x = Math.min(this.parent.w - this.w / 2, this.x);
@@ -332,23 +340,21 @@ class CursorComponent extends Component{
 		noFill();
 		strokeWeight(2);
 		stroke(this.c.r, this.c.g, this.c.b);
-		ellipse(this.w / 2, this.h / 2, this.w, this.h);
+		ellipse(this.w / 2, this.h / 2, this.w + this.hit_animation, this.h + this.hit_animation);
 	}
 	checkHit(px, py){
 		return (
-			super.checkHit(px, py) &&
-			(
-				Math.sqrt(
-					Math.pow(px - (this.x + this.w / 2), 2) + 
-					Math.pow(py - (this.y + this.h / 2), 2)
-				) <= this.w / 2
-			)
+			Math.sqrt(
+				Math.pow(px - (this.x + this.w / 2), 2) + 
+				Math.pow(py - (this.y + this.h / 2), 2)
+			) <= (this.w + this.hit_animation) / 2
 		);
 	}
 	mouseEvent(type, tmp_x, tmp_y, start_x, start_y){
 		if (super.mouseEventToChild(type, tmp_x, tmp_y, start_x, start_y)) return;
 		switch(type) {
 		case "HIT":
+			this.hit_flag = true;
 			break;
 		case "DOWN":
 			this.dragStartCompX = this.x;
