@@ -123,9 +123,9 @@ class Component{
 	getRootComponent(){
 		return (this.parent != null) ? this.parent.getRootComponent() : this;
 	}
-	getGrobalPos(px, py){
+	getGlobalPos(px, py){
 		if(this.parent == null) return {x: this.x + px, y: this.y + py};
-		else return this.parent.getGrobalPos(x + px, y + py);
+		else return this.parent.getGlobalPos(this.x + px, this.y + py);
 	}
 	activeChilds(c){
 		let index = -1;
@@ -148,8 +148,8 @@ class Component{
 }
 
 class RootComponent extends Component{
-	constructor(){
-		super(0, 0, width, height);
+	constructor(isWebgl = false){
+		super((isWebgl ? -0.5 * width : 0), (isWebgl ? -0.5 * height : 0), width, height);
 
 		this.pmousePressed = false;
 		this.dragStartMouseX = 0;
@@ -174,6 +174,7 @@ class RootComponent extends Component{
 	}
 	draw(){
 		push();
+		translate(this.x, this.y);
 		translate(this.original.x, this.original.y);
 		scale(this.zoom);
 		super.draw_sub();
@@ -310,7 +311,7 @@ class CursorComponent extends Component{
 		this.c = tmp_color;
 	}
 	pos(){
-		return {x: this.x + this.w / 2, y: this.y + this.h / 2};
+		return super.getGlobalPos(this.w / 2, this.h / 2);
 	}
 	set(tmp_x, tmp_y){
 		this.x = tmp_x - this.w / 2;

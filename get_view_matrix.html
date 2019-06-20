@@ -4,6 +4,7 @@
 	<body>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.js"></script>
 		<script src="/components.js"></script>
+		<script src="/vector.js"></script>
 		<script type="text/javascript">
 			// 参考URL : https://im-lab.net/artoolkit-overview/
 
@@ -13,35 +14,74 @@
 			// カメラの垂直画角
 			const cam_h_fov = 70;
 			// カメラ座標の原点から画面の中心までの距離(ピクセル単位)
-			const cam_l = (0.5 * cam_h) / Math.tan(0.5 * cam_h_fov * 2 * Math.PI / 360);
+			const cam_l = (0.5 * cam_h) / Math.tan(0.5 * deg2rad(cam_h_fov));
 			// カメラの水平画角
-			const cam_w_fov = Math.atan((0.5 * cam_w) / cam_l) * 360 / Math.PI;
+			const cam_w_fov = rad2deg(2 * Math.atan((0.5 * cam_w) / cam_l));
 
 			let rootComponent;
-			let marker = [
-				new CursorComponent(100, 100),
-				new CursorComponent(200, 100),
-				new CursorComponent(200, 200),
-				new CursorComponent(100, 200)
-			];
+			let marker;
 
 			function setup() {
-				createCanvas(cam_w, cam_h);
-				rootComponent = new RootComponent();
+				createCanvas(cam_w, cam_h, WEBGL);
+				rootComponent = new RootComponent(true);
+				marker = [
+					new CursorComponent(width / 2 - 71, height / 2 - 12),
+					new CursorComponent(width / 2 + 12, height / 2 - 27),
+					new CursorComponent(width / 2 + 81, height / 2 + 0 ),
+					new CursorComponent(width / 2 - 27, height / 2 + 29)
+				];
 				for(let m of marker) rootComponent.add(m);
 			}
 
 			function draw() {
+				// コンポーネントの描画
 				background(255, 255, 255);
 				rootComponent.update();
 				rootComponent.draw();
+
+				// 直線の描画
 				noFill();
 				stroke(0, 0, 0);
 				strokeWeight(3);
 				beginShape();
 				for(let m of marker) vertex(m.pos().x, m.pos().y);
-				if (marker.length > 0) vertex(marker[0].pos().x, marker[0].pos().y);
-				endShape();
+				endShape(CLOSE);
+
+				/*
+				push();
+				translate(0, 0, -200);
+				sphere(300);
+				pop();
+				*/
+
+				// ビュー行列の計算
+				// 画面上のマーカーの各辺のベクトルの計算
+				let line_top    = vvec(marker[1].pos().x - marker[0].pos().x, marker[1].pos().y - marker[0].pos().y, 0);
+				let line_bottom = vvec(marker[2].pos().x - marker[3].pos().x, marker[2].pos().y - marker[3].pos().y, 0);
+				let line_left   = vvec(marker[3].pos().x - marker[0].pos().x, marker[3].pos().y - marker[0].pos().y, 0);
+				let line_right  = vvec(marker[2].pos().x - marker[1].pos().x, marker[2].pos().y - marker[1].pos().y, 0);
+				// カメラ座標からマーカーの各点までのベクトルの計算
+				let left_top     = vvec(marker[0].pos().x, marker[0].pos().y, cam_l);
+				let right_top    = vvec(marker[1].pos().x, marker[1].pos().y, cam_l);
+				let right_bottom = vvec(marker[2].pos().x, marker[2].pos().y, cam_l);
+				let left_bottom  = vvec(marker[3].pos().x, marker[3].pos().y, cam_l);
+				// 辺とカメラ座標を通る面を画面上のマーカーの各辺で計算
+				let surface_top    = vcross(line_top,    left_top   );
+				let surface_bottom = vcross(line_bottom, left_bottom);
+				let surface_left   = vcross(line_left  , left_top   );
+				let surface_right  = vcross(line_right , right_top  );
+				// 上下の面の交線と左右の面の交線を計算
+				let x_vec = vcross(surface_top , surface_bottom);
+				let z_vec = vcross(surface_left, surface_right );
+				let y_vec = vcross(x_vec       , z_vec         );
+				
+				// 回転行列の計算
+				let rotate_matrix = mmat(
+					x_vec.x, y_vec.x, z_vec.x, 0,
+					x_vec.y, y_vec.y, z_vec.y, 0,
+					x_vec.z, y_vec.z, z_vec.z, 0,
+					x_vec.w, y_vec.w, z_vec.w, 1
+				);
 			}
 		</script>
 	</body>
