@@ -9,6 +9,10 @@ function vcross(vec1, vec2) { return vvec(
 	vec1.x * vec2.y - vec1.y * vec2.x,
 	vec1.w * vec2.w
 ); }
+function vnormal(vec) {
+	let length = Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.y, 2) + Math.pow(vec.z, 2));
+	return vvec(vec.x / length, vec.y / length, vec.z / length);
+}
 
 function mmat(
 	m00, m01, m02, m03,
@@ -52,16 +56,16 @@ function mmcross(mat1, mat2) {
 	);
 }
 function mvcross(mat, vec) {
-	return mmat(
-		mat.m00 * vec.x, mat.m01 * vec.y, mat.m02 * vec.z, mat.m03 * vec.w,
-		mat.m10 * vec.x, mat.m11 * vec.y, mat.m12 * vec.z, mat.m13 * vec.w,
-		mat.m20 * vec.x, mat.m21 * vec.y, mat.m22 * vec.z, mat.m23 * vec.w,
-		mat.m30 * vec.x, mat.m31 * vec.y, mat.m32 * vec.z, mat.m33 * vec.w
+	return vvec(
+		mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z + mat.m03 * vec.w,
+		mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z + mat.m13 * vec.w,
+		mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z + mat.m23 * vec.w,
+		mat.m30 * vec.x + mat.m31 * vec.y + mat.m32 * vec.z + mat.m33 * vec.w
 	);
 }
 
-function world2screen(vec, projmodelview, w, h) {
-	let v = mvcross(vec, projmodelview);
+function world2screen(vec, projmodelview) {
+	let v = mvcross(projmodelview, vec);
 	v.x /= v.w;
 	v.y /= v.w;
 	v.z /= v.w;
@@ -76,6 +80,19 @@ function screen2world(vec, proj, w, h) {
 	p.x = p.x * p.z / proj.m00;
 	p.y = p.y * p.z / proj.m11;
 	return p;
+}
+function mrotate(axis, rad) {
+	let naxis = vnormal(axis);
+	let x = naxis.x * Math.sin(rad / 2);
+	let y = naxis.y * Math.sin(rad / 2);
+	let z = naxis.z * Math.sin(rad / 2);
+	let w = Math.cos(rad / 2);
+	return mmat(
+		1 - 2 * (y * y + z * z), 2 * (x * y + w * z), 2 * (x * z -w * y), 0, 
+		2 * (x * y - w * z), 1 - 2 * (x * x + z * z), 2 * (y * z +w * x), 0, 
+		2 * (x * z + w * y), 2 * (y * z -w * x), 1 - 2 * (x * x + y * y), 0, 
+		0, 0, 0, 1
+	);
 }
 
 function deg2rad(deg) { return deg * (2 * Math.PI) / 360; }

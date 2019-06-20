@@ -21,6 +21,8 @@
 			let rootComponent;
 			let marker;
 
+			let time = 0;
+
 			function setup() {
 				createCanvas(cam_w, cam_h, WEBGL);
 				rootComponent = new RootComponent(true);
@@ -34,6 +36,8 @@
 			}
 
 			function draw() {
+				time += 0.01;
+
 				// コンポーネントの描画
 				background(255, 255, 255);
 				rootComponent.update();
@@ -47,13 +51,6 @@
 				for(let m of marker) vertex(m.pos().x, m.pos().y);
 				endShape(CLOSE);
 
-				/*
-				push();
-				translate(0, 0, -200);
-				sphere(300);
-				pop();
-				*/
-
 				// ビュー行列の計算
 				// 画面上のマーカーの各辺のベクトルの計算
 				let line_top    = vvec(marker[1].pos().x - marker[0].pos().x, marker[1].pos().y - marker[0].pos().y, 0);
@@ -66,22 +63,40 @@
 				let right_bottom = vvec(marker[2].pos().x, marker[2].pos().y, cam_l);
 				let left_bottom  = vvec(marker[3].pos().x, marker[3].pos().y, cam_l);
 				// 辺とカメラ座標を通る面を画面上のマーカーの各辺で計算
-				let surface_top    = vcross(line_top,    left_top   );
-				let surface_bottom = vcross(line_bottom, left_bottom);
-				let surface_left   = vcross(line_left  , left_top   );
-				let surface_right  = vcross(line_right , right_top  );
+				let surface_top    = vnormal(vcross(line_top,    left_top   ));
+				let surface_bottom = vnormal(vcross(line_bottom, left_bottom));
+				let surface_left   = vnormal(vcross(line_left  , left_top   ));
+				let surface_right  = vnormal(vcross(line_right , right_top  ));
 				// 上下の面の交線と左右の面の交線を計算
-				let x_vec = vcross(surface_top , surface_bottom);
-				let z_vec = vcross(surface_left, surface_right );
-				let y_vec = vcross(x_vec       , z_vec         );
-				
+				let x_vec = vnormal(vcross(surface_top , surface_bottom));
+				let z_vec = vnormal(vcross(surface_left, surface_right ));
+				let y_vec = vnormal(vcross(x_vec       , z_vec         ));
+				// プロジェクション行列の計算
+				let near = 20, far = 2000;
+				let projection = mmat(
+					2 * near / width, 0, 0, 0,
+					0, 2 * near / height, 0, 0,
+					0, 0, - (far + near) / (far - near), - (2 * far * near) / (far - near),
+					0, 0, -1, 0
+				);
 				// 回転行列の計算
 				let rotate_matrix = mmat(
 					x_vec.x, y_vec.x, z_vec.x, 0,
 					x_vec.y, y_vec.y, z_vec.y, 0,
 					x_vec.z, y_vec.z, z_vec.z, 0,
-					x_vec.w, y_vec.w, z_vec.w, 1
+					0      , 0      , 0      , 1
 				);
+				rotate_matrix = mrotate(vvec(1, 1, 0), time);
+				let mvp = mmcross(projection, rotate_matrix);
+
+				mvp = projection;
+
+				let x_vec_ = world2screen(vvec(1000, 0, 0), mvp);
+				let y_vec_ = world2screen(vvec(0, 1000, 0), mvp);
+				let z_vec_ = world2screen(vvec(0, 0, 1000), mvp);
+				line(0, 0, x_vec_.x, x_vec_.y);
+				line(0, 0, y_vec_.x, y_vec_.y);
+				line(0, 0, z_vec_.x, z_vec_.y);
 			}
 		</script>
 	</body>
