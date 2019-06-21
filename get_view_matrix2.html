@@ -1,0 +1,194 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<script src="https://p5js.org/assets/js/p5.min.js"></script>
+		<script src="https://p5js.org/assets/js/p5.dom.min.js"></script>
+		<script src="./components.js"></script>
+		<script src="./vector.js"></script>
+
+		<script src="https://threejs.org/build/three.js"></script>
+		
+		<script type="text/javascript">
+			// 参考URL : https://im-lab.net/artoolkit-overview/
+
+			// カメラの解像度
+			const cam_w = 640;
+			const cam_h = 480;
+			// カメラの垂直画角
+			const cam_h_fov = 47.5;
+			// カメラ座標の原点から画面の中心までの距離(ピクセル単位)
+			const cam_l = (0.5 * cam_h) / Math.tan(0.5 * deg2rad(cam_h_fov));
+			// カメラの水平画角
+			const cam_w_fov = rad2deg(2 * Math.atan((0.5 * cam_w) / cam_l));
+			// 現実空間でのカメラを配置した高さ(m)
+			const cam_pos_h = 117 / 100;
+
+			let rootComponent;
+			let marker;
+
+			let time = 0;
+
+			let capture;
+			let font;
+			let font_url = "./inconsolata.otf";
+
+			function setup() {
+				createCanvas(cam_w, cam_h, WEBGL);
+				frameRate(60);
+				rootComponent = new RootComponent(true);
+				marker = [
+					new CursorComponent(width / 2 - 71, height / 2 - 12),
+					new CursorComponent(width / 2 + 12, height / 2 - 27),
+					new CursorComponent(width / 2 + 81, height / 2 + 0 ),
+					new CursorComponent(width / 2 - 27, height / 2 + 29)
+				];
+				for(let m of marker) rootComponent.add(m);
+
+				capture = createCapture();
+				capture.size(640, 480);
+				font = loadFont(font_url);
+			}
+
+			function draw() {
+				time += 0.01;
+
+				// コンポーネントの描画
+				background(255, 255, 255);
+				image(capture, -width/2, -height/2, width, height);
+				rootComponent.update();
+				rootComponent.draw();
+
+				// 直線の描画
+				noFill();
+				stroke(0, 0, 0);
+				strokeWeight(1);
+				beginShape();
+				for(let m of marker) vertex(m.pos().x, m.pos().y);
+				endShape(CLOSE);
+
+				// ビュー行列の計算
+				// 画面上のマーカーの各辺のベクトルの計算
+				let line_top    = vvec(marker[1].pos().x - marker[0].pos().x, marker[1].pos().y - marker[0].pos().y, 0);
+				let line_bottom = vvec(marker[2].pos().x - marker[3].pos().x, marker[2].pos().y - marker[3].pos().y, 0);
+				let line_left   = vvec(marker[3].pos().x - marker[0].pos().x, marker[3].pos().y - marker[0].pos().y, 0);
+				let line_right  = vvec(marker[2].pos().x - marker[1].pos().x, marker[2].pos().y - marker[1].pos().y, 0);
+				// カメラ座標からマーカーの各点までのベクトルの計算
+				let left_top     = vvec(marker[0].pos().x, marker[0].pos().y, cam_l);
+				let right_top    = vvec(marker[1].pos().x, marker[1].pos().y, cam_l);
+				let right_bottom = vvec(marker[2].pos().x, marker[2].pos().y, cam_l);
+				let left_bottom  = vvec(marker[3].pos().x, marker[3].pos().y, cam_l);
+				// 辺とカメラ座標を通る面を画面上のマーカーの各辺で計算
+				let surface_top    = vnormal(vcross(line_top,    left_top   ));
+				let surface_bottom = vnormal(vcross(line_bottom, left_bottom));
+				let surface_left   = vnormal(vcross(line_left  , left_top   ));
+				let surface_right  = vnormal(vcross(line_right , right_top  ));
+				// 上下の面の交線と左右の面の交線を計算
+				let x_vec = vnormal(vcross(surface_top , surface_bottom));
+				let z_vec = vnormal(vcross(surface_left, surface_right ));
+				let y_vec = vnormal(vcross(x_vec, z_vec));
+				// カメラの座標
+				let camera_position = vvec(0, 0, -cam_l * 4);
+				// プロジェクション行列の計算
+				let projection = mmat(
+					cam_l, 0, 0, 0,
+					0, cam_l, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 1, 0
+				);
+				// 回転行列の計算
+				let rotate_matrix = mmat(
+					x_vec.x, y_vec.x, z_vec.x, 0,
+					x_vec.y, y_vec.y, z_vec.y, 0,
+					x_vec.z, y_vec.z, z_vec.z, 0,
+					0      , 0      , 0      , 1
+				);
+				// 平行移動行列の計算
+				let translate_matrix = mmat(
+					1, 0, 0, -camera_position.x - marker[0].pos().x * camera_position.z / cam_l,
+					0, 1, 0, -camera_position.y - marker[0].pos().y * camera_position.z / cam_l,
+					0, 0, 1, -camera_position.z,
+					0, 0, 0, 1
+				);
+				// view行列の計算
+				let view_matrix = mmcross(translate_matrix, rotate_matrix);
+
+				// MVP行列の計算
+				let mvp = mmcross(projection, view_matrix);
+
+				// 図形描画関数
+				let arline = (x1, y1, z1, x2, y2, z2) => {
+					let p1 = world2screen(vvec(x1, y1, z1), mvp);
+					let p2 = world2screen(vvec(x2, y2, z2), mvp);
+					line(p1.x, p1.y, p2.x, p2.y);
+				};
+				let arellipse = (x, y, z) => {
+					let p = world2screen(vvec(x, y, z), mvp);
+					ellipse(p.x, p.y, 10, 10);
+				};
+
+				// グリッドの描画
+				strokeWeight(0.8);
+				stroke(255, 0, 0);
+				for(let i = -9; i <= 9; i++) {
+					arline(-1000, 0, i * 100, 1000, 0, i * 100);
+					arline(i * 100, 0, -1000, i * 100, 0, 1000);
+				}
+				arline(0, -1000, 0, 0, 1000, 0);
+
+				// モデルビュー行列の逆行列を計算
+				let tmp = new THREE.Matrix4();
+				tmp.set(
+					view_matrix.m00, view_matrix.m01, view_matrix.m02, view_matrix.m03,
+					view_matrix.m10, view_matrix.m11, view_matrix.m12, view_matrix.m13,
+					view_matrix.m20, view_matrix.m21, view_matrix.m22, view_matrix.m23,
+					view_matrix.m30, view_matrix.m31, view_matrix.m32, view_matrix.m33,
+				);
+				tmp.getInverse(tmp);
+				let tmp_ = tmp.elements;
+				let r2 = mmat(
+					tmp_[0 ], tmp_[4 ], tmp_[8 ], tmp_[12],
+					tmp_[1 ], tmp_[5 ], tmp_[9 ], tmp_[13],
+					tmp_[2 ], tmp_[6 ], tmp_[10], tmp_[14],
+					tmp_[3 ], tmp_[7 ], tmp_[11], tmp_[15]
+				);
+
+				// マーカー空間でのカメラ座標の計算
+				let m_cam_pos = mvcross(r2, vvec(0, 0, 0));
+				// マーカー空間でのカメラの高さの計算
+				let m_cam_h = m_cam_pos.y;
+				// マーカー空間での画面上のマウス座標の計算
+				let m_mouse_pos = mvcross(r2, vvec(mouseX - width / 2, mouseY - height / 2, cam_l));
+				// m_cam_pos から m_mouse_pos へのベクトル
+				let mmcvec = vvec(
+					m_mouse_pos.x - m_cam_pos.x,
+					m_mouse_pos.y - m_cam_pos.y,
+					m_mouse_pos.z - m_cam_pos.z
+				);
+				// (m_cam_pos + m_mouse_pos * ___).y = 0 となる___を見つける
+				let k = m_cam_pos.y / mmcvec.y;
+				// マーカー平面でのマウス座標の計算
+				let p_mouse_pos = vvec(
+					m_cam_pos.x - mmcvec.x * k,
+					m_cam_pos.y - mmcvec.y * k,
+					m_cam_pos.z - mmcvec.z * k
+				);
+				// マーカー平面でのマウス座標をメートル単位に変換
+				let p_mouse_pos_m = vvec(
+					p_mouse_pos.x * cam_pos_h / m_cam_h,
+					p_mouse_pos.y * cam_pos_h / m_cam_h,
+					p_mouse_pos.z * cam_pos_h / m_cam_h
+				);
+
+				arellipse(p_mouse_pos.x, p_mouse_pos.y, p_mouse_pos.z);
+				
+				fill(255, 255, 255);
+				textSize(20);
+				textFont(font);
+				textAlign(LEFT, TOP);
+				text("x:" + (-p_mouse_pos_m.x) + "(m)", -width / 2 + 10, -height / 2 + 10);
+				text("y:" + p_mouse_pos_m.z + "(m)", -width / 2 + 10, -height / 2 + 30);
+			}
+		</script>
+	</body>
+</html>
