@@ -16,13 +16,13 @@
 			const cam_w = 640;
 			const cam_h = 480;
 			// カメラの垂直画角
-			const cam_h_fov = 47.5;
+			const cam_h_fov = 60.0;
 			// カメラ座標の原点から画面の中心までの距離(ピクセル単位)
 			const cam_l = (0.5 * cam_h) / Math.tan(0.5 * deg2rad(cam_h_fov));
 			// カメラの水平画角
 			const cam_w_fov = rad2deg(2 * Math.atan((0.5 * cam_w) / cam_l));
 			// 現実空間でのカメラを配置した高さ(m)
-			const cam_pos_h = 117 / 100;
+			const cam_pos_h = 0.5;
 
 			let rootComponent;
 			let marker;
