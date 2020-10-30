@@ -30,8 +30,8 @@
 			let time = 0;
 
 			let capture;
-			let font;
-			let font_url = "./inconsolata.otf";
+
+			let posElem;
 
 			function setup() {
 				createCanvas(cam_w, cam_h, WEBGL);
@@ -47,7 +47,9 @@
 
 				capture = createCapture();
 				capture.size(640, 480);
-				font = loadFont(font_url);
+
+				posElem = document.createElement("pre");
+				document.body.prepend(posElem);
 			}
 
 			function draw() {
@@ -182,12 +184,9 @@
 
 				arellipse(p_mouse_pos.x, p_mouse_pos.y, p_mouse_pos.z);
 				
-				fill(255, 255, 255);
-				textSize(20);
-				textFont(font);
-				textAlign(LEFT, TOP);
-				text("x:" + (-p_mouse_pos_m.x) + "(m)", -width / 2 + 10, -height / 2 + 10);
-				text("y:" + p_mouse_pos_m.z + "(m)", -width / 2 + 10, -height / 2 + 30);
+				posElem.innerHTML = "";
+				posElem.innerHTML += "x:" + (-p_mouse_pos_m.x) + "(m)\n";
+				posElem.innerHTML += "y:" + p_mouse_pos_m.z + "(m)\n";
 			}
 		</script>
 	</body>
