@@ -1,0 +1,72 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.js"></script>
+		<script src="./components.js"></script>
+		<script src="./vector.js"></script>
+		<script type="text/javascript">
+			let pressed = false;
+			let mouseX_ = 0; let mouseY_ = 0;
+			const points = [
+				{ x: -1, y: -1, z: -1, w: 1 },
+				{ x: +1, y: -1, z: -1, w: 1 },
+				{ x: +1, y: +1, z: -1, w: 1 },
+				{ x: +1, y: +1, z: +1, w: 1 },
+				{ x: -1, y: +1, z: +1, w: 1 },
+				{ x: -1, y: -1, z: +1, w: 1 },
+			];
+			let rotate = mmat(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+			function setup() {
+				createCanvas(640, 480, WEBGL);
+				frameRate(60);
+			}
+			function draw() {
+				background(240, 240, 240);
+				noFill();
+				strokeWeight(3);
+
+				const f = 400;
+				if (pressed) {
+					const mouse = { x: mouseY_ - mouseY, y: mouseX - mouseX_, z: 0 };
+					if (mouse.x != 0 || mouse.y != 0) {
+						const length = Math.sqrt(Math.pow(mouse.x, 2) + Math.pow(mouse.y, 2));
+						rotate = mmcross(mrotate(mouse, length / 100), rotate);
+					}
+				}
+				const screenPoints = toScreen(points, f, rotate);
+				const dots = estimateFocusLength(screenPoints);
+				const screenPoints_ = toScreen(points, dots[0], dots[1]);
+				console.log(f + " -> " + dots[0]);
+
+				stroke(0, 0, 0);
+				beginShape(); for(let p of screenPoints) vertex(p.x, p.y); endShape(CLOSE);
+				stroke(255, 0, 0);
+				beginShape(); for(let p of screenPoints_) vertex(p.x, p.y); endShape(CLOSE);
+
+				mouseX_ = mouseX; mouseY_ = mouseY;
+			}
+			function toScreen(points, f, rotate) {
+				const proj = mmat(
+					f, 0, 0, 0,
+					0, f, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 1, 0
+				);
+				const translate = mmat(
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, f / 80,
+					0, 0, 0, 1
+				);
+				const m = mmcross(proj, mmcross(translate, rotate));
+				const screenPoints = points
+					.map(p => world2screen(p, m))
+					.map(p => ({ x: int(p.x), y: int(p.y) }));
+				return screenPoints;
+			}
+			function mousePressed() { pressed = true; }
+			function mouseReleased() { pressed = false; }
+		</script>
+	</body>
+</html>
