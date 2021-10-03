@@ -69,6 +69,7 @@ function world2screen(vec, projmodelview) {
 	v.x /= v.w;
 	v.y /= v.w;
 	v.z /= v.w;
+	v.w /= v.w;
 	return v;
 }
 
@@ -97,3 +98,42 @@ function mrotate(axis, rad) {
 
 function deg2rad(deg) { return deg * (2 * Math.PI) / 360; }
 function rad2deg(rad) { return rad * 360 / (2 * Math.PI); }
+
+function estimateFocusLength(p) {
+	const p1 = { x: p[0].x, y: p[0].y };
+	const p2 = { x: p[1].x, y: p[1].y };
+	const p3 = { x: p[2].x, y: p[2].y };
+	const p4 = { x: p[3].x, y: p[3].y };
+	const p5 = { x: p[4].x, y: p[4].y };
+	const p6 = { x: p[5].x, y: p[5].y };
+	const Ax = (p1.x-p2.x)*(p4.x*(p4.y-p5.y)-p4.y*(p4.x-p5.x))-(p4.x-p5.x)*(p1.x*(p1.y-p2.y)-p1.y*(p1.x-p2.x));
+	const Bx = (p1.y-p2.y)*(p4.x*(p4.y-p5.y)-p4.y*(p4.x-p5.x))-(p4.y-p5.y)*(p1.x*(p1.y-p2.y)-p1.y*(p1.x-p2.x));
+	const Cx = (p1.x-p2.x)*(p4.y-p5.y)-(p1.y-p2.y)*(p4.x-p5.x);
+	const Ay = (p2.x-p3.x)*(p5.x*(p5.y-p6.y)-p5.y*(p5.x-p6.x))-(p5.x-p6.x)*(p2.x*(p2.y-p3.y)-p2.y*(p2.x-p3.x));
+	const By = (p2.y-p3.y)*(p5.x*(p5.y-p6.y)-p5.y*(p5.x-p6.x))-(p5.y-p6.y)*(p2.x*(p2.y-p3.y)-p2.y*(p2.x-p3.x));
+	const Cy = (p2.x-p3.x)*(p5.y-p6.y)-(p2.y-p3.y)*(p5.x-p6.x);
+	const Az = (p3.x-p4.x)*(p6.x*(p6.y-p1.y)-p6.y*(p6.x-p1.x))-(p6.x-p1.x)*(p3.x*(p3.y-p4.y)-p3.y*(p3.x-p4.x));
+	const Bz = (p3.y-p4.y)*(p6.x*(p6.y-p1.y)-p6.y*(p6.x-p1.x))-(p6.y-p1.y)*(p3.x*(p3.y-p4.y)-p3.y*(p3.x-p4.x));
+	const Cz = (p3.x-p4.x)*(p6.y-p1.y)-(p3.y-p4.y)*(p6.x-p1.x);
+	const x_ = Math.abs(Cy * Cz);
+	const y_ = Math.abs(Cz * Cx);
+	const z_ = Math.abs(Cx * Cy);
+	const axis = Math.max(x_, y_, z_);
+	let f = NaN;
+	if (axis === x_) { f = Math.sqrt(Math.abs(Ay * Az + By * Bz) / x_); }
+	if (axis === y_) { f = Math.sqrt(Math.abs(Az * Ax + Bz * Bx) / y_); }
+	if (axis === z_) { f = Math.sqrt(Math.abs(Ax * Ay + Bx * By) / z_); }
+	let x = vnormal(vvec(Ax * f, Bx * f, Cx * f * f));
+	let y = vnormal(vvec(Ay * f, By * f, Cy * f * f));
+	let z = vnormal(vvec(Az * f, Bz * f, Cz * f * f));
+	if (axis === x_) { x = vnormal(vcross(y, z)); }
+	if (axis === y_) { y = vnormal(vcross(z, x)); }
+	if (axis === z_) { z = vnormal(vcross(x, y)); }
+	const rotate = mmat(
+		x.x, y.x, z.x, 0,
+		x.y, y.y, z.y, 0,
+		x.z, y.z, z.z, 0,
+		0, 0, 0, 1
+	);
+	return [f, rotate];
+}
