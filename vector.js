@@ -99,7 +99,7 @@ function mrotate(axis, rad) {
 function deg2rad(deg) { return deg * (2 * Math.PI) / 360; }
 function rad2deg(rad) { return rad * 360 / (2 * Math.PI); }
 
-function estimateFocusLength(p) {
+function estimateFocalLength(p) {
 	const p1 = { x: p[0].x, y: p[0].y };
 	const p2 = { x: p[1].x, y: p[1].y };
 	const p3 = { x: p[2].x, y: p[2].y };

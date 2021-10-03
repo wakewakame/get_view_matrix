@@ -8,6 +8,7 @@
 		<script type="text/javascript">
 			let pressed = false;
 			let mouseX_ = 0; let mouseY_ = 0;
+			let slider, info;
 			const points = [
 				{ x: -1, y: -1, z: -1, w: 1 },
 				{ x: +1, y: -1, z: -1, w: 1 },
@@ -18,15 +19,19 @@
 			];
 			let rotate = mmat(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 			function setup() {
-				createCanvas(640, 480, WEBGL);
+				const canvas = createCanvas(640, 480, WEBGL);
+				canvas.parent("canvas");
 				frameRate(60);
+				slider = document.getElementById("slider");
+				info = document.getElementById("info");
+				slider.value = 400;
 			}
 			function draw() {
 				background(240, 240, 240);
 				noFill();
 				strokeWeight(3);
 
-				const f = 400;
+				const f = slider.value;
 				if (pressed) {
 					const mouse = { x: mouseY_ - mouseY, y: mouseX - mouseX_, z: 0 };
 					if (mouse.x != 0 || mouse.y != 0) {
@@ -35,7 +40,7 @@
 					}
 				}
 				const screenPoints = toScreen(points, f, rotate);
-				const dots = estimateFocusLength(screenPoints);
+				const dots = estimateFocalLength(screenPoints);
 				const screenPoints_ = toScreen(points, dots[0], dots[1]);
 				console.log(f + " -> " + dots[0]);
 
@@ -45,6 +50,10 @@
 				beginShape(); for(let p of screenPoints_) vertex(p.x, p.y); endShape(CLOSE);
 
 				mouseX_ = mouseX; mouseY_ = mouseY;
+
+				info.innerHTML =
+					"現在の焦点距離: " +f  + "px<br>" +
+					"推定された焦点距離: " + dots[0] + "px";
 			}
 			function toScreen(points, f, rotate) {
 				const proj = mmat(
@@ -61,12 +70,20 @@
 				);
 				const m = mmcross(proj, mmcross(translate, rotate));
 				const screenPoints = points
-					.map(p => world2screen(p, m))
-					.map(p => ({ x: int(p.x), y: int(p.y) }));
+					.map(p => world2screen(p, m));
+					//.map(p => ({ x: int(p.x), y: int(p.y) }));
 				return screenPoints;
 			}
 			function mousePressed() { pressed = true; }
 			function mouseReleased() { pressed = false; }
 		</script>
+		<div id="canvas"></div>
+		<div>
+			<input id="slider" type="range" name="focal length" min="100" max="3000">
+			<p id="info"></p>
+			<p>黒線: 焦点距離の推定に使用した線<br>
+			赤線: 推定した焦点距離を元に再投影した線</p>
+			<p>式の導出について: <a href="https://github.com/wakewakame/get_view_matrix/blob/master/estimate_focal_length.ipynb">estimate_focal_length.ipynb</a></p>
+		</div>
 	</body>
 </html>
